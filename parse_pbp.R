@@ -113,18 +113,24 @@ neo_game_pbp_lineups <- neo_game_pbp |>
     )[-1]
   )
 
-
-types <- pbp |>
+neo_game_pbp_possession <- neo_game_pbp |>
   mutate(
-    prev = lag(text),
-    foll = lead(text)
+    possession_change = lag(possession_change, default = first(possession_change))
   ) |>
-  group_by(type_id) |>
-  summarise(
-    text = first(text),
-    type_text = first(type_text),
-    short_description = first(type_text),
-    prev = first(prev),
-    foll = first(foll),
-    count = n()
+  mutate(
+    home_possession = accumulate(
+      row_number(),
+      ~ if (type_text[.y] == "End Period" & (period_number[.y] == 1 | period_number[.y] == 2)) { # end of second or third quarter
+            athlete_3_team[1] != home_team_id[1]
+        } else if (type_text[.y] == "Jumpball") {
+            athlete_3_team[.y] == home_team_id[.y]
+        } else if (possession_change[.y]) !.x else .x,
+      .init = athlete_3_team[1] == home_team_id[1]
+    )[-1]
+  ) |>
+  mutate(
+    possession = ifelse(home_possession, home_team_abbrev, away_team_abbrev)
+  ) |>
+  select(
+    text, possession
   )
