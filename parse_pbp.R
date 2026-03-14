@@ -120,8 +120,10 @@ neo_game_pbp_possession <- neo_game_pbp |>
   mutate(
     home_possession = accumulate(
       row_number(),
-      ~ if (type_text[.y] == "End Period" & (period_number[.y] == 1 | period_number[.y] == 2)) { # end of second or third quarter
+      ~ if (type_text[.y] == "End Period" & (period_number[.y] == 1 | period_number[.y] == 2)) { # end of second or third quarter, invert initial jumpball possession
             athlete_3_team[1] != home_team_id[1]
+        } else if (type_text[.y] == "End Period" & period_number[.y] == 3) { # end of fourth quarter, initial jumpball possession
+            athlete_3_team[1] == home_team_id[1]
         } else if (type_text[.y] == "Jumpball") {
             athlete_3_team[.y] == home_team_id[.y]
         } else if (possession_change[.y]) !.x else .x,
