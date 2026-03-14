@@ -17,6 +17,7 @@ pbp <- raw |>
   filter(
     !(type_id %in% c(
       0,                    # unknown
+      9,                    # defensive goaltending
       214, 215, 216, 277,   # coach challenge
       278, 279, 280         # referee challenge
     ))
@@ -146,4 +147,9 @@ check <- all_games |>
   select(text, possession, game_id)
 
 game_pbp <- check |>
-  filter(game_id == 401810519)
+  filter(game_id == 401810460)
+
+dfgt <- all_games |>
+  filter(
+    grepl("defensive goaltending", text, ignore.case = TRUE)
+  )
