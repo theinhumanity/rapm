@@ -3,6 +3,13 @@ library(dplyr)
 library(stringr)
 library(tidyverse)
 
+KEEP_BALL_FREE_THROW = c(
+  103, # Technical
+  105, # Flagrant 2/2
+  106, # Flagrant 1/1
+  108  # Clear path
+)
+
 raw <- load_nba_pbp()
 boxscore <- load_nba_player_box()
 
@@ -31,7 +38,7 @@ pbp <- raw |>
   rename(
     play_team = team_id
   )
-  
+
 boxscore <- boxscore |>
   filter(
     !did_not_play
@@ -75,7 +82,7 @@ all_games <- map_dfr(
       ) |> 
       fill(prev_foul) |>
       mutate(
-        is_defensive_rebound = type_text == "Defensive Rebound",
+        is_defensive_rebound = type_text == "Defensive Rebound" & !(lag(type_id) %in% KEEP_BALL_FREE_THROW),
         is_turnover = str_detect(short_description, "Turnover"),
         is_and1_fg = scoring_play & (lead(type_text) == "Shooting Foul") & (athlete_1_team != lead(athlete_1_team)),
         is_made_fg_no_and1 = (score_value >= 2) & !is_and1_fg,
@@ -83,12 +90,7 @@ all_games <- map_dfr(
         is_final_free_throw = (type_id == 97) | (type_id == 99) | (type_id == 102), # 97 = 1/1, 99 = 2/2, 102 = 3/3
         is_made_final_free_throw = is_final_free_throw & scoring_play,
         keep_ball_after_ft = is_free_throw & scoring_play &
-          ((type_id %in% c(
-            103, # Technical
-            105, # Flagrant 2/2
-            106, # Flagrant 1/1
-            108  # Clear path
-          )) | (prev_foul == "Transition Take Foul")),
+          ((type_id %in% KEEP_BALL_FREE_THROW) | (prev_foul == "Transition Take Foul")),
         possession_change = is_defensive_rebound | is_turnover | is_made_fg_no_and1 | (is_made_final_free_throw & !keep_ball_after_ft)
       ) |>
       mutate(
