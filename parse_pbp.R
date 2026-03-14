@@ -63,7 +63,7 @@ neo_game_pbp <- game_pbp |>
   fill(prev_foul) |>
   mutate(
     is_defensive_rebound = type_text == "Defensive Rebound",
-    is_turnover = str_detect(type_text, "Turnover"),
+    is_turnover = str_detect(short_description, "Turnover"),
     is_and1_fg = scoring_play & (lead(type_text) == "Shooting Foul") & (athlete_1_team != lead(athlete_1_team)),
     is_made_fg_no_and1 = (score_value >= 2) & !is_and1_fg,
     is_free_throw = str_detect(type_text, "Free Throw"),
