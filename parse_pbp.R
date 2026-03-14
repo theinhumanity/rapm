@@ -124,7 +124,7 @@ all_games <- map_dfr(
           } else if (type_text[.y] == "End Period" & period_number[.y] == 3) { # end of fourth quarter, initial jumpball possession
             athlete_3_team[1] == home_team_id[1]
           } else if (type_text[.y] == "Jumpball") {
-            athlete_3_team[.y] == home_team_id[.y]
+            play_team[.y + 1] == home_team_id[.y]
           } else if (possession_change[.y]) !.x else .x,
           .init = play_team[1] == home_team_id[1]
         )[-1]
@@ -142,3 +142,6 @@ all_games <- map_dfr(
 
 check <- all_games |>
   select(text, possession, game_id)
+
+game_pbp <- check |>
+  filter(game_id == 401810519)
