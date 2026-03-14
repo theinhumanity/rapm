@@ -37,14 +37,16 @@ boxscore <- boxscore |>
     !did_not_play
   )
 
+game_pbp_id = "401810763"
+
 game_pbp <- pbp |>
   filter(
-    game_id == "401810429"
+    game_id == game_pbp_id
   )
 
 game_boxscore <- boxscore |>
   filter(
-    game_id == "401810429"
+    game_id == game_pbp_id
   )
 
 athlete_team <- game_boxscore %>%
