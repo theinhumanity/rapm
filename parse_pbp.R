@@ -124,9 +124,9 @@ profvis({
           home_possession = accumulate(
             row_number(),
             ~ if (type_id[.y] == 412 & (period_number[.y] == 1 | period_number[.y] == 2)) { # end of second or third quarter, invert initial jumpball possession
-              athlete_3_team[1] != home_team_id[1]
+              play_team[1] != home_team_id[1]
             } else if (type_id[.y] == 412 & period_number[.y] == 3) { # end of fourth quarter, initial jumpball possession
-              athlete_3_team[1] == home_team_id[1]
+              play_team[1] == home_team_id[1]
             } else if (type_id[.y] == 615) { # Jump ball
               play_team[.y + 1] == home_team_id[.y]
             } else if (possession_change[.y]) !.x else .x,
@@ -149,5 +149,5 @@ profvis({
 check <- all_games |>
   select(text, possession, game_id, period_number)
 
-game_pbp <- check |>
-  filter(game_id == 401809790)
+game_pbp <- all_games |>
+  filter(game_id == 401810257)
