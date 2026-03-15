@@ -79,15 +79,15 @@ all_games <- map_dfr(
       left_join(athlete_team, by = c("athlete_id_3"="athlete_id")) |>
       rename(athlete_3_team = team_id) |>
       mutate(
-        prev_foul = ifelse(str_detect(type_text, "Foul"), text, NA)
+        prev_foul = ifelse(grepl("foul", type_text, ignore.case = TRUE), text, NA)
       ) |> 
       fill(prev_foul) |>
       mutate(
         is_defensive_rebound = type_text == "Defensive Rebound" & !(lag(type_id) %in% KEEP_BALL_FREE_THROW),
-        is_turnover = str_detect(short_description, "Turnover"),
+        is_turnover = grepl("Turnover", short_description, ignore.case = TRUE),
         is_and1_fg = scoring_play & (lead(type_text) == "Shooting Foul") & (athlete_1_team != lead(athlete_1_team)),
         is_made_fg_no_and1 = (score_value >= 2) & !is_and1_fg,
-        is_free_throw = str_detect(type_text, "Free Throw"),
+        is_free_throw = grepl("Free Throw", type_text, ignore.case = TRUE),
         is_final_free_throw = (type_id == 97) | (type_id == 99) | (type_id == 102), # 97 = 1/1, 99 = 2/2, 102 = 3/3
         is_made_final_free_throw = is_final_free_throw & scoring_play,
         keep_ball_after_ft = is_free_throw & scoring_play &
@@ -116,8 +116,8 @@ all_games <- map_dfr(
           .init = away_starters
         )[-1]
       ) |>
-      mutate(
-        possession_change = lag(possession_change, default = first(possession_change))
+      filter(
+        type_text != "Substitution"
       ) |>
       mutate(
         home_possession = accumulate(
@@ -133,6 +133,7 @@ all_games <- map_dfr(
         )[-1]
       ) |>
       mutate(
+        home_possession = lag(home_possession, default = first(home_possession)),
         possession = ifelse(home_possession, home_team_abbrev, away_team_abbrev)
       )
     
@@ -144,12 +145,7 @@ all_games <- map_dfr(
 
 
 check <- all_games |>
-  select(text, possession, game_id, period_number)
+  select(text, possession, game_id, period_number, end_quarter_seconds_remaining, type_text, short_description, possession_change, home_possession, is_turnover)
 
-game_pbp <- pbp |>
+game_pbp <- check |>
   filter(game_id == 401809790)
-
-dfgt <- all_games |>
-  filter(
-    grepl("defensive goaltending", text, ignore.case = TRUE)
-  )
