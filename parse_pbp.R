@@ -49,100 +49,99 @@ boxscore <- boxscore |>
 pbp_split <- pbp %>% group_split(game_id)
 
 
-profvis({
-  all_games <- map_dfr(
-    pbp_split,
-    \(game_pbp){
-      p()
-      
-      this_game_id <- first(game_pbp$game_id)
-      
-      game_boxscore <- boxscore %>%
-        filter(game_id == this_game_id)
-      
-      athlete_team <- game_boxscore %>%
-        select(athlete_id, team_id)
-      
-      team_lookup <- setNames(athlete_team$team_id, athlete_team$athlete_id)
-      
-      home_starters <- game_boxscore |>
-        filter(starter, home_away == "home") |>
-        pull(athlete_id)
-      
-      away_starters <- game_boxscore |>
-        filter(starter, home_away == "away") |>
-        pull(athlete_id)
-      
-      finished_game_pbp <- game_pbp |>
-        mutate(
-          athlete_1_team = team_lookup[as.character(athlete_id_1)],
-          athlete_2_team = team_lookup[as.character(athlete_id_2)],
-          athlete_3_team = team_lookup[as.character(athlete_id_3)]
-        ) |>
-        mutate(
-          prev_foul = ifelse(grepl("foul", type_text, ignore.case = TRUE), text, NA)
-        ) |> 
-        fill(prev_foul) |>
-        mutate(
-          is_defensive_rebound = type_id == 155 & !(lag(type_id) %in% KEEP_BALL_FREE_THROW),
-          is_turnover = grepl("Turnover", short_description, ignore.case = TRUE),
-          is_and1_fg = scoring_play & (lead(type_text) == "Shooting Foul") & (athlete_1_team != lead(athlete_1_team)),
-          is_made_fg_no_and1 = (score_value >= 2) & !is_and1_fg,
-          is_free_throw = grepl("Free Throw", type_text, ignore.case = TRUE),
-          is_final_free_throw = (type_id == 97) | (type_id == 99) | (type_id == 102), # 97 = 1/1, 99 = 2/2, 102 = 3/3
-          is_made_final_free_throw = is_final_free_throw & scoring_play,
-          keep_ball_after_ft = is_free_throw & scoring_play &
-            ((type_id %in% KEEP_BALL_FREE_THROW) | (prev_foul == "Transition Take Foul" | prev_foul == "Away from Play Foul")),
-          possession_change = is_defensive_rebound | is_turnover | is_made_fg_no_and1 | (is_made_final_free_throw & !keep_ball_after_ft)
-        ) |>
-        mutate(
-          home_lineup = accumulate(
-            row_number(),
-            ~ if ((type_id[.y] == 584) & (play_team[.y] == home_team_id[.y])) {
-              .x[.x == athlete_id_2[.y]] <- athlete_id_1[.y]
-            } else {
-              .x
-            },
-            .init = home_starters
-          )[-1]
-        ) |>
-        mutate(
-          away_lineup = accumulate(
-            row_number(),
-            ~ if ((type_id[.y] == 584) & (play_team[.y] == away_team_id[.y])) {
-              .x[.x == athlete_id_2[.y]] <- athlete_id_1[.y]
-            } else {
-              .x
-            },
-            .init = away_starters
-          )[-1]
-        ) |>
-        filter(
-          type_id != 584
-        ) |>
-        mutate(
-          home_possession = accumulate(
-            row_number(),
-            ~ if (type_id[.y] == 412 & (period_number[.y] == 1 | period_number[.y] == 2)) { # end of second or third quarter, invert initial jumpball possession
-              play_team[1] != home_team_id[1]
-            } else if (type_id[.y] == 412 & period_number[.y] == 3) { # end of fourth quarter, initial jumpball possession
-              play_team[1] == home_team_id[1]
-            } else if (type_id[.y] == 615) { # Jump ball
-              play_team[.y + 1] == home_team_id[.y]
-            } else if (possession_change[.y]) !.x else .x,
-            .init = play_team[1] == home_team_id[1]
-          )[-1]
-        ) |>
-        mutate(
-          home_possession = lag(home_possession, default = first(home_possession)),
-          possession = ifelse(home_possession, home_team_abbrev, away_team_abbrev)
-        )
-      
-      finished_game_pbp
-    },
-    .progress = TRUE
-  )
-})
+
+all_games <- map_dfr(
+  pbp_split,
+  \(game_pbp){
+    p()
+    
+    this_game_id <- first(game_pbp$game_id)
+    
+    game_boxscore <- boxscore %>%
+      filter(game_id == this_game_id)
+    
+    athlete_team <- game_boxscore %>%
+      select(athlete_id, team_id)
+    
+    team_lookup <- setNames(athlete_team$team_id, athlete_team$athlete_id)
+    
+    home_starters <- game_boxscore |>
+      filter(starter, home_away == "home") |>
+      pull(athlete_id)
+    
+    away_starters <- game_boxscore |>
+      filter(starter, home_away == "away") |>
+      pull(athlete_id)
+    
+    finished_game_pbp <- game_pbp |>
+      mutate(
+        athlete_1_team = team_lookup[as.character(athlete_id_1)],
+        athlete_2_team = team_lookup[as.character(athlete_id_2)],
+        athlete_3_team = team_lookup[as.character(athlete_id_3)]
+      ) |>
+      mutate(
+        prev_foul = ifelse(grepl("foul", type_text, ignore.case = TRUE), text, NA)
+      ) |> 
+      fill(prev_foul) |>
+      mutate(
+        is_defensive_rebound = type_id == 155 & !(lag(type_id) %in% KEEP_BALL_FREE_THROW),
+        is_turnover = grepl("Turnover", short_description, ignore.case = TRUE),
+        is_and1_fg = scoring_play & (lead(type_text) == "Shooting Foul") & (athlete_1_team != lead(athlete_1_team)),
+        is_made_fg_no_and1 = (score_value >= 2) & !is_and1_fg,
+        is_free_throw = grepl("Free Throw", type_text, ignore.case = TRUE),
+        is_final_free_throw = (type_id == 97) | (type_id == 99) | (type_id == 102), # 97 = 1/1, 99 = 2/2, 102 = 3/3
+        is_made_final_free_throw = is_final_free_throw & scoring_play,
+        keep_ball_after_ft = is_free_throw & scoring_play &
+          ((type_id %in% KEEP_BALL_FREE_THROW) | (prev_foul == "Transition Take Foul" | prev_foul == "Away from Play Foul")),
+        possession_change = is_defensive_rebound | is_turnover | is_made_fg_no_and1 | (is_made_final_free_throw & !keep_ball_after_ft)
+      ) |>
+      mutate(
+        home_lineup = accumulate(
+          row_number(),
+          ~ if ((type_id[.y] == 584) & (play_team[.y] == home_team_id[.y])) {
+            .x[.x == athlete_id_2[.y]] <- athlete_id_1[.y]
+          } else {
+            .x
+          },
+          .init = home_starters
+        )[-1]
+      ) |>
+      mutate(
+        away_lineup = accumulate(
+          row_number(),
+          ~ if ((type_id[.y] == 584) & (play_team[.y] == away_team_id[.y])) {
+            .x[.x == athlete_id_2[.y]] <- athlete_id_1[.y]
+          } else {
+            .x
+          },
+          .init = away_starters
+        )[-1]
+      ) |>
+      filter(
+        type_id != 584
+      ) |>
+      mutate(
+        home_possession = accumulate(
+          row_number(),
+          ~ if (type_id[.y] == 412 & (period_number[.y] == 1 | period_number[.y] == 2)) { # end of second or third quarter, invert initial jumpball possession
+            play_team[1] != home_team_id[1]
+          } else if (type_id[.y] == 412 & period_number[.y] == 3) { # end of fourth quarter, initial jumpball possession
+            play_team[1] == home_team_id[1]
+          } else if (type_id[.y] == 615) { # Jump ball
+            play_team[.y + 1] == home_team_id[.y]
+          } else if (possession_change[.y]) !.x else .x,
+          .init = play_team[1] == home_team_id[1]
+        )[-1]
+      ) |>
+      mutate(
+        home_possession = lag(home_possession, default = first(home_possession)),
+        possession = ifelse(home_possession, home_team_abbrev, away_team_abbrev)
+      )
+    
+    finished_game_pbp
+  },
+  .progress = TRUE
+)
 
 
 
