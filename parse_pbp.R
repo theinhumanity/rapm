@@ -128,7 +128,7 @@ all_games <- map_dfr(
           } else if (type_id[.y] == 412 & period_number[.y] == 3) { # end of fourth quarter, initial jumpball possession
             play_team[1] == home_team_id[1]
           } else if (type_id[.y] == 615) { # Jump ball
-            play_team[.y + 1] == home_team_id[.y]
+            play_team[.y] == home_team_id[.y]
           } else if (possession_change[.y]) !.x else .x,
           .init = play_team[1] == home_team_id[1]
         )[-1]
@@ -149,4 +149,4 @@ check <- all_games |>
   select(text, possession, game_id, period_number)
 
 game_pbp <- all_games |>
-  filter(game_id == 401810257)
+  filter(game_id == 401809939)
