@@ -91,7 +91,7 @@ all_games <- map_dfr(
         is_final_free_throw = (type_id == 97) | (type_id == 99) | (type_id == 102), # 97 = 1/1, 99 = 2/2, 102 = 3/3
         is_made_final_free_throw = is_final_free_throw & scoring_play,
         keep_ball_after_ft = is_free_throw & scoring_play &
-          ((type_id %in% KEEP_BALL_FREE_THROW) | (prev_foul == "Transition Take Foul")),
+          ((type_id %in% KEEP_BALL_FREE_THROW) | (prev_foul == "Transition Take Foul" | prev_foul == "Away from Play Foul")),
         possession_change = is_defensive_rebound | is_turnover | is_made_fg_no_and1 | (is_made_final_free_throw & !keep_ball_after_ft)
       ) |>
       mutate(
@@ -144,10 +144,10 @@ all_games <- map_dfr(
 
 
 check <- all_games |>
-  select(text, possession, game_id)
+  select(text, possession, game_id, period_number)
 
-game_pbp <- check |>
-  filter(game_id == 401810460)
+game_pbp <- pbp |>
+  filter(game_id == 401809790)
 
 dfgt <- all_games |>
   filter(
