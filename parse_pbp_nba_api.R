@@ -42,11 +42,22 @@ game_pbp <- raw_pbp[-1,] |>
     is_made_fg = is_field_goal & (shot_result == "Made"),
     is_and1 = is_made_fg & (lead(sub_type == "Shooting") & lead(player1_team_id) != player1_team_id),
     is_made_fg_no_and1 = is_made_fg & !is_and1,
-    is_final_ft = sub_type %in% LAST_FT,
-    is_possession_end = is_defensive_rebound | is_turnover | is_made_fg_no_and1 | is_final_ft
+    is_final_ft = sub_type %in% LAST_FT & !grepl("MISS", description),
+    is_possession_end = is_defensive_rebound | is_turnover | is_made_fg_no_and1 | is_final_ft,
+    home_team_possession = NA
   )
 
-rebounds <- game_pbp |>
+game_pbp$home_team_possession[1] <- game_pbp$player3_team_id[1] == game_pbp$home_team_id[1]
+
+for (i in 2:nrow(game_pbp)) {
+  game_pbp$home_team_possession[i] <- xor(game_pbp$home_team_possession[i-1], game_pbp$is_possession_end[i-1])
+}
+
+check_pbp <- game_pbp |>
+  mutate(
+    possession_team = if_else(home_team_possession, "OKC", "DET")
+  ) |>
   select(
-    description, is_defensive_rebound, is_turnover, is_made_fg_no_and1, is_final_ft
-  )
+    description, possession_team,
+         is_field_goal, is_defensive_rebound, is_turnover, is_made_fg, is_and1, is_made_fg_no_and1, is_final_ft, is_possession_end
+    )
