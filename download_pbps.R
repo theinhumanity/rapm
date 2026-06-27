@@ -8,10 +8,12 @@ handlers("cli")
 
 con <- dbConnect(RSQLite::SQLite(), "nba_pbp.sqlite")
 
-for (i in 1:30) {
-  print(paste("Now doing:", year_to_season(most_recent_nba_season()-i)))
+total_games <- 0
+
+for (i in 1996:2025) {
+  print(paste("Now doing:", year_to_season(i)))
   
-  schedule <- nba_schedule(season = most_recent_nba_season()-i)
+  schedule <- nba_schedule(season = i)
 
   
   regular_season_schedule <- schedule |>
@@ -25,12 +27,14 @@ for (i in 1:30) {
   
   new_games <- setdiff(regular_season_schedule, existing)
   
+  total_games <- total_games + length(regular_season_schedule)
+  
   if (length(new_games) == 0){
-    print("All games downloaded")
+    #print("All games downloaded")
     next; 
   }
   
-  print(paste(length(existing), "downloaded,", length(regular_season_schedule), "to do"))
+  #print(paste(length(existing), "downloaded,", length(regular_season_schedule), "to do"))
   
   pbp <- nba_pbps(
     game_ids = new_games,
