@@ -30,11 +30,11 @@ for (i in 1996:2025) {
   total_games <- total_games + length(regular_season_schedule)
   
   if (length(new_games) == 0){
-    #print("All games downloaded")
+    print("All games downloaded")
     next; 
   }
   
-  #print(paste(length(existing), "downloaded,", length(regular_season_schedule), "to do"))
+  print(paste(length(existing), "downloaded,", length(regular_season_schedule), "to do"))
   
   pbp <- nba_pbps(
     game_ids = new_games,
@@ -51,4 +51,8 @@ total_pbp <- dbGetQuery(con, "SELECT * FROM pbp")
 
 games <- total_pbp |>
   group_by(game_id) |>
+  count()
+
+events <- total_pbp |>
+  group_by(action_type, sub_type, player1_id, player1_name) |>
   count()

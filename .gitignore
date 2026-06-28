@@ -2,7 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-
+.RDataTmp
 \.idea
 \.vs
-/nba_pbp.sqlite
+/*.sqlite
+/*.sqlite-journal
